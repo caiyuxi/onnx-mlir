@@ -107,7 +107,7 @@ func @cast_elimination(%arg0: tensor<2xf32>) -> tensor<2xf32> {
   // CHECK-NEXT: return %arg0 : tensor<2xf32>
 }
 
-//CHECK-LABEL: @cast_propagation(%{{.*}}: tensor<2xf32>) -> tensor<2xf32> {
+//CHECK-LABEL: @cast_propagation(%{{.*}}: tensor<2xf32>) -> tensor<2xi32> {
 func @cast_propagation(%arg0: tensor<2xf32>) -> tensor<2xf32> {
   %0 = "onnx.Cast"(%arg0) {to = 3 : si64} : (tensor<2xf32>) -> tensor<2xi8>
   %1 = "onnx.Cast"(%0) {to = 6 : si64} : (tensor<2xi8>) -> tensor<2xi32>
