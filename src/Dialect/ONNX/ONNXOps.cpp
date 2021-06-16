@@ -3635,8 +3635,37 @@ LogicalResult ONNXUpsampleOp::inferShapes() {
   return success();
 }
 
-LogicalResult ONNXWhereOp::inferShapes() {
-  return emitError(NOT_IMPLEMENTED_MESSAGE);
+LogicalResult ONNXWhereOp::inferShapes(
+    std::function<void(mlir::Region &)> doShapeInference) {
+  auto condShape = condition().getType().cast<RankedTensorType>().getShape();
+  auto xShape = X().getType().cast<RankedTensorType>().getShape();
+  auto yShape = Y().getType().cast<RankedTensorType>().getShape();
+  if (!condition().getType().isa<RankedTensorType>() ||
+      !X().getType().isa<RankedTensorType>() || 
+      !Y().getType().isa<RankedTensorType>())
+    return emitError("Input tensor(s) not ranked");
+  RankedTensorType condTy = condition().getType().cast<RankedTensorType>();
+  RankedTensorType xTy = X().getType().cast<RankedTensorType>();
+  RankedTensorType yTy = Y().getType().cast<RankedTensorType>();
+
+  // Check operands type
+  // constraint condition to be boolean
+  if (!condTy.getElementType().isInteger(1)) 
+    return emitError("Condition must be boolean");
+  
+  // constraint x and y to be the same type
+  if (xTy.getElementType() != yTy.getElementType())
+    return emitError("Do not support where op with different input type");
+
+  SmallVector<int64_t, 4> interShape;
+  SmallVector<int64_t, 4> outputShape;
+  if (!getBroadcastedShape(condTy, xTy, resultShape)) 
+    return emitError("Failed to get broadcasted shape");
+  if (!getBroadcastedShape(resultShape, yTy, outputShape)) 
+    return emitError("Failed to get broadcasted shape");
+  op->getResult().setType(RankedTensorType::get(outputShape, xTy.getElementType()));
+
+  return success();
 }
 
 LogicalResult ONNXArrayFeatureExtractorOp::inferShapes() {
